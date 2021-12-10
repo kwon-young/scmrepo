@@ -205,7 +205,9 @@ def test_set_ref(tmp_dir: TmpDir, scm: Git, git: Git):
 def test_get_ref(tmp_dir: TmpDir, scm: Git, git: Git):
     tmp_dir.gen({"file": "0"})
     scm.add_commit("file", message="init")
+
     init_rev = scm.get_rev()
+
     tmp_dir.gen(
         {
             os.path.join(".git", "refs", "foo", "bar"): init_rev,
@@ -214,9 +216,13 @@ def test_get_ref(tmp_dir: TmpDir, scm: Git, git: Git):
             ): "ref: refs/heads/master",
         }
     )
+    scm.tag(["-a", "annotated", "-m", "Annotated Tag"])
 
     assert init_rev == git.get_ref("refs/foo/bar")
     assert init_rev == git.get_ref("refs/foo/baz")
+    assert init_rev == git.get_ref("refs/tags/annotated")
+    # follow=False to replicate dvc.repo.experiments.show
+    assert scm.get_rev() == git.get_ref("refs/tags/annotated", follow=False)
     assert git.get_ref("refs/foo/baz", follow=False) == "refs/heads/master"
     assert git.get_ref("refs/foo/qux") is None
 
